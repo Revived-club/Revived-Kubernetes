@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: proxy-server
+spec:
+  serviceName: "proxy-server"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: proxy-server
+  template:
+    metadata:
+      labels:
+        app: proxy-server
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: minecraft
+          image: ghcr.io/yyuhdev/proxy:latest
+          imagePullPolicy: Always
+          env:
+            - name: SERVER_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MEMORY
+              value: "4096"
+          ports:
+            - containerPort: 19132
+              name: minecraft
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/volume
+      volumes:
+        - name: data
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxy-server
+spec:
+  selector:
+    app: proxy-server
+  ports:
+    - protocol: TCP
+      port: 19132
+      targetPort: 19132
