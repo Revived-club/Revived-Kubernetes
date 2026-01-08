@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: queue-service
+  template:
+    metadata:
+      labels:
+        app: queue-service
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: queue
+          image: ghcr.io/revived-club/revived-duels:queue
+          imagePullPolicy: Always
+          env:
+            - name: SERVER_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MEMORY
+              value: "2048"
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: secrets-deployment
+                  key: mongodb-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secrets-deployment
+                  key: mongodb-password
+            - name: MONGODB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: secrets-deployment
+                  key: mongodb-host
+            - name: MONGODB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: secrets-deployment
+                  key: mongodb-database
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: secrets-deployment
+                  key: redis-host
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: secrets-deployment
+                  key: redis-port
+          ports:
+            - containerPort: 5672
+              name: queue
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/volume
+      volumes:
+        - name: data
+          emptyDir: {}
